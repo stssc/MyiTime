@@ -1,10 +1,14 @@
 package com.example.myitime;
 
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import android.annotation.SuppressLint;
 import android.app.AlertDialog;
+import android.app.DatePickerDialog;
+import android.app.TimePickerDialog;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -15,76 +19,85 @@ import android.graphics.PorterDuff;
 import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
+import android.text.Editable;
+import android.text.InputFilter;
 import android.text.InputType;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.WindowManager;
+import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
 import android.widget.TextView;
+import android.widget.TimePicker;
 import android.widget.Toast;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Date;
 
 import static com.example.myitime.ImageTransformation.bitmapToByte;
 import static com.example.myitime.ImageTransformation.drawableToBitmap;
 
-public class AddActivity extends AppCompatActivity implements View.OnClickListener {
-    public static final int GROUP_1=1;
-    public static final int MENU_ITEM_WEEK=7;
-    public static final int MENU_ITEM_MONTH=30;
-    public static final int MENU_ITEM_YEAR=365;
-    public static final int MENU_ITEM_CUSTOMIZE =-1;
-    public static final int REQUEST_PICTURE=0;
-    public static final int REQUEST_RESIZE=1;
-    public static final int MENU_ITEM_NULL=0;
+public class AddActivity extends AppCompatActivity implements View.OnClickListener, View.OnLongClickListener {
+    public static final int GROUP_1 = 1;
+    public static final int MENU_ITEM_WEEK = 7;
+    public static final int MENU_ITEM_MONTH = 30;
+    public static final int MENU_ITEM_YEAR = 365;
+    public static final int MENU_ITEM_CUSTOMIZE = -1;
+    public static final int REQUEST_PICTURE = 0;
+    public static final int REQUEST_RESIZE = 1;
+    public static final int MENU_ITEM_NULL = 0;
 
     private Intent intent;
-    private ImageButton buttonBack,buttonOK;
-    private TextView titleText, remarkText,timeTitle, timeText,periodTitle, periodText,picTitle,labelTitle, labelText;
+    private ImageButton buttonBack, buttonOK;
+    private TextView titleText, remarkText, timeTitle, timeText, periodTitle, periodText, picTitle, labelTitle, labelText;
     private EditText titleEdit, remarkEdit;
-    private ConstraintLayout titleLayout,timeLayout,periodLayout,picLayout,labelLayout;
+    private ConstraintLayout titleLayout, timeLayout, periodLayout, picLayout, labelLayout;
 
-    private Date time=null;
-    private int period=0;
-    private byte[] picture=null;
-    private ArrayList<String> labels=new ArrayList<>();
+    private Calendar time = null;
+    private int period = 0;
+    private byte[] picture = null;
+    private ArrayList<String> labels = new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
 
-        intent=getIntent();
-        ActionBar actionBar=getSupportActionBar();
-        if (actionBar!=null){
+        intent = getIntent();
+        ActionBar actionBar = getSupportActionBar();
+        if (actionBar != null) {
             actionBar.hide();
         }
 
-        buttonBack=findViewById(R.id.button_back);
-        buttonOK=findViewById(R.id.button_ok);
-        titleText =findViewById(R.id.title_text_view);
-        remarkText =findViewById(R.id.remark_text_view);
-        timeTitle=findViewById(R.id.time_title);
-        timeText =findViewById(R.id.time);
-        periodTitle=findViewById(R.id.period_title);
-        periodText =findViewById(R.id.period);
-        picTitle=findViewById(R.id.pic_title);
-        labelTitle=findViewById(R.id.label_title);
-        labelText =findViewById(R.id.label);
-        titleEdit =findViewById(R.id.title_edit_text);
-        remarkEdit =findViewById(R.id.remark_edit_text);
-        titleLayout=findViewById(R.id.title_layout);
-        timeLayout=findViewById(R.id.time_layout);
-        periodLayout=findViewById(R.id.period_layout);
-        picLayout=findViewById(R.id.pic_layout);
-        labelLayout=findViewById(R.id.label_layout);
+        buttonBack = findViewById(R.id.button_back);
+        buttonOK = findViewById(R.id.button_ok);
+        titleText = findViewById(R.id.title_text_view);
+        remarkText = findViewById(R.id.remark_text_view);
+        timeTitle = findViewById(R.id.time_title);
+        timeText = findViewById(R.id.time);
+        periodTitle = findViewById(R.id.period_title);
+        periodText = findViewById(R.id.period);
+        picTitle = findViewById(R.id.pic_title);
+        labelTitle = findViewById(R.id.label_title);
+        labelText = findViewById(R.id.label);
+        titleEdit = findViewById(R.id.title_edit_text);
+        remarkEdit = findViewById(R.id.remark_edit_text);
+        titleLayout = findViewById(R.id.title_layout);
+        timeLayout = findViewById(R.id.time_layout);
+        periodLayout = findViewById(R.id.period_layout);
+        picLayout = findViewById(R.id.pic_layout);
+        labelLayout = findViewById(R.id.label_layout);
 
         buttonBack.setOnClickListener(this);
         buttonOK.setOnClickListener(this);
@@ -93,13 +106,10 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         picLayout.setOnClickListener(this);
         labelLayout.setOnClickListener(this);
 
+        timeLayout.setOnLongClickListener(this);
         this.registerForContextMenu(periodLayout);//注册上下文菜单，不然点击了没反应
-        periodLayout.setOnLongClickListener(new View.OnLongClickListener() {//但是又不想让它长按了也创建上下文菜单，只能把它长按的响应事件重写掉了
-            @Override
-            public boolean onLongClick(View v) {
-                return true;
-            }
-        });
+        periodLayout.setOnLongClickListener(this);//但是又不想让它长按了也创建上下文菜单，只能写一个空的事件把它长按的响应事件重写掉了
+
     }
 
     @Override
@@ -108,7 +118,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         menu.setHeaderTitle("周期");
         //调用MenuItem add(int groupId,int itemId,int order,charSequence title);方法为上下文菜单添加菜单项，其中，order为常量NONE（0）表示无所谓菜单项的顺序
         menu.add(GROUP_1, MENU_ITEM_WEEK, Menu.NONE, "每周");
-        menu.add(GROUP_1, MENU_ITEM_MONTH,Menu.NONE,"每月");
+        menu.add(GROUP_1, MENU_ITEM_MONTH, Menu.NONE, "每月");
         menu.add(GROUP_1, MENU_ITEM_YEAR, Menu.NONE, "每年");
         menu.add(GROUP_1, MENU_ITEM_CUSTOMIZE, Menu.NONE, "自定义");
         menu.add(GROUP_1, MENU_ITEM_NULL, Menu.NONE, "无");
@@ -116,7 +126,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
 
     @Override
     public boolean onContextItemSelected(MenuItem item) {//在上下文菜单的一个菜单项被选中时调用，menuItem为当前被选中的菜单项
-        period=item.getItemId();
+        period = item.getItemId();
         switch (period) {
             case MENU_ITEM_NULL:
                 periodText.setText("无");
@@ -131,7 +141,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 periodText.setText("每年");
                 break;
             case MENU_ITEM_CUSTOMIZE:
-                final EditText editText=new EditText(AddActivity.this);
+                final EditText editText = new EditText(AddActivity.this);
                 editText.setHint("输入周期（天）");
                 editText.setInputType(InputType.TYPE_CLASS_NUMBER);//设置只允许输入整数
                 editText.setGravity(Gravity.CENTER);
@@ -148,8 +158,8 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                         .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                period=Integer.parseInt(editText.getText().toString());
-                                periodText.setText(period+"天");
+                                period = Integer.parseInt(editText.getText().toString());
+                                periodText.setText(period + "天");
                                 dialog.dismiss();
                             }
                         }).create();
@@ -161,55 +171,206 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         return super.onContextItemSelected(item);
     }
 
+    @SuppressLint("DefaultLocale")
     @Override
     public void onClick(View v) {
 
-        if (v==buttonBack){
+        if (v == buttonBack) {
             finish();
         }
 
-        else if (v==buttonOK){
+        else if (v == buttonOK) {
             String title = titleEdit.getText().toString();
-            if (title.length()==0)
-                Toast.makeText(AddActivity.this,"标题不能为空",Toast.LENGTH_SHORT).show();
-            else{
+            if (title.length() == 0)
+                Toast.makeText(AddActivity.this, "标题不能为空", Toast.LENGTH_SHORT).show();
+            else {
                 String remark = remarkEdit.getText().toString();
                 //把所有属性封装到序列化的Day类对象里传值给intent
-                if (time==null)
-                    time=new Date();
-                if (picture==null)
+                if (time == null)
+                    time = Calendar.getInstance();//获取设置完成时的当前时间
+                if (picture == null)
                     //用户没有选择图片则设置为默认图片
-                    picture= ImageTransformation.bitmapToByte(ImageTransformation.drawableToBitmap(MainActivity.defaultPictures[intent.getIntExtra("position",0)%MainActivity.defaultPictures.length]));
-                Day day=new Day(picture,title,remark,time,period,labels);
-                intent.putExtra("day",day);
-                setResult(RESULT_OK,intent);
+                    picture = ImageTransformation.bitmapToByte(ImageTransformation.drawableToBitmap(MainActivity.defaultPictures[intent.getIntExtra("position", 0) % MainActivity.defaultPictures.length]));
+                Day day = new Day(picture, title, remark, time, period, labels);
+                intent.putExtra("day", day);
+                setResult(RESULT_OK, intent);
                 finish();
             }
         }
 
-        else if (v==timeLayout){
+        else if (v == timeLayout) {
+            //获取默认值：当前时间
+            final Calendar nowTime = Calendar.getInstance();
+            time=Calendar.getInstance();
+            //日历控件
+            DatePickerDialog date = new DatePickerDialog(AddActivity.this, new DatePickerDialog.OnDateSetListener() {
+                @Override
+                public void onDateSet(DatePicker datePicker, int year, int monthOfYear, int dayOfMonth) {
+                    time.set(year, monthOfYear + 1, dayOfMonth);
+
+                    //钟表控件
+                    TimePickerDialog clock = new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
+//                        @RequiresApi(api = Build.VERSION_CODES.M)
+                        @Override
+                        public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                            time.set(Calendar.MINUTE, minute);
+                            //注意，这句setText必须放在最里面的点击时间里面！不然放外面的话用户还没选好时间这句就执行了！出来的就是用户选时间之前的默认时间！
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                        }
+                    }, nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(Calendar.MINUTE), true);//钟表默认时间
+                    clock.show();
+
+                }
+            }, nowTime.get(Calendar.YEAR), nowTime.get(Calendar.MONTH), nowTime.get(Calendar.DAY_OF_MONTH));//日历默认日期
+            date.show();
 
         }
 
-        else if (v==periodLayout){
+        else if (v == periodLayout) {
             v.showContextMenu();//弹出上下文菜单
         }
 
-        else if (v==picLayout){
+        else if (v == picLayout) {
             //调用手机相册
             Intent intent = new Intent(Intent.ACTION_PICK, android.provider.MediaStore.Images.Media.EXTERNAL_CONTENT_URI);
             startActivityForResult(intent, REQUEST_PICTURE);
         }
 
-        else if (v==labelLayout){
+        else if (v == labelLayout) {
 
         }
 
     }
 
+    @SuppressLint("DefaultLocale")
+    @Override
+    public boolean onLongClick(View v) {
+        if (v==timeLayout){
+            //之所以这么诡异的变量声明是因为……final变量才能被内部匿名类访问，但final变量又不能被其他类修改，所以只能用长度为1的final数组了
+            final AlertDialog[] dialog={null};
+            //设置默认值
+            final Calendar now=Calendar.getInstance();
+            final Calendar[] after = {null};
+            final Calendar[] before = {null};
+            //对话框布局
+            @SuppressLint("InflateParams")
+            View dialogView=getLayoutInflater().inflate(R.layout.date_calculator,null);
+            //获取布局控件
+            final TextView nowShow=dialogView.findViewById(R.id.show_now);
+            final TextView afterShow=dialogView.findViewById(R.id.show_after);
+            final TextView beforeShow=dialogView.findViewById(R.id.show_before);
+            EditText afterEdit=dialogView.findViewById(R.id.edit_after);
+            EditText beforeEdit=dialogView.findViewById(R.id.edit_before);
+            ConstraintLayout nowSelect=dialogView.findViewById(R.id.select_now);
+            TextView afterSelect=dialogView.findViewById(R.id.select_after);
+            TextView beforeSelect=dialogView.findViewById(R.id.select_before);
+            //默认先显示当前时间
+            nowShow.setText(String.format("%tY年%<tm月%<td日",now.getTime()));
+            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日",now.getTime()));
+            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日",now.getTime()));
+            //限制输入框只能输入四位整数
+            afterEdit.setInputType(InputType.TYPE_CLASS_NUMBER);//限制只能输入整数
+            afterEdit.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)}); //限制只能输入四位数
+            beforeEdit.setInputType(InputType.TYPE_CLASS_NUMBER);
+            beforeEdit.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)});
+            //输入监听事件，与输入框同步计算日期
+            afterEdit.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int beforeStart, int count) {
+                    //不能这样！相当于把now的引用给了after[0]！after[0]一变now就跟着变了！Java跟C++不一样！易错！这样做的后果是：我打一个12再按一下退格变成2，我本来想要从+12变成+1的效果的，结果变成+12之后再+1就变成+13了
+//                    after[0]=now;
+//                    if (s.length()!=0)
+//                        after[0].add(Calendar.DATE,Integer.parseInt(s.toString()));
+                    after[0]=Calendar.getInstance();
+                    after[0].set(now.get(Calendar.YEAR),now.get(Calendar.MONTH),now.get(Calendar.DAY_OF_MONTH));//输入框为空默认值为now
+                    if (s.length()!=0)//输入框不为空才调用日期计算
+                        after[0].add(Calendar.DATE,Integer.parseInt(s.toString()));
+                    afterShow.setText(String.format("天之后：%tY年%<tm月%<td日", after[0].getTime()));
+                }
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+            beforeEdit.addTextChangedListener(new TextWatcher() {
+                @Override
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                @Override
+                public void onTextChanged(CharSequence s, int start, int beforeStart, int count) {
+                    before[0]=Calendar.getInstance();
+                    before[0].set(now.get(Calendar.YEAR),now.get(Calendar.MONTH),now.get(Calendar.DAY_OF_MONTH));
+                    if (s.length()!=0)
+                        before[0].add(Calendar.DATE,-Integer.parseInt(s.toString()));
+                    beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日", before[0].getTime()));
+                }
+                @Override
+                public void afterTextChanged(Editable s) {}
+            });
+            //点击事件
+            nowSelect.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    //日历控件
+                    new DatePickerDialog(AddActivity.this, new DatePickerDialog.OnDateSetListener() {
+                        @Override
+                        public void onDateSet(DatePicker datePicker, int year, int monthOfYear, int dayOfMonth) {
+                            now.set(year,monthOfYear,dayOfMonth);
+                            nowShow.setText(String.format("%tY年%<tm月%<td日",now.getTime()));
+                            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日",now.getTime()));
+                            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日",now.getTime()));
+                        }
+                    }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show();//日历默认日期
+                }
+            });
+            afterSelect.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                        @Override
+                        public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+                            time=after[0]==null?now:after[0];
+                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                            time.set(Calendar.MINUTE,minute);
+                            dialog[0].cancel();//需要手动关闭对话框
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                        }
+                    }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();//钟表默认时间
+                }
+            });
+            beforeSelect.setOnClickListener(new View.OnClickListener() {
+                @Override
+                public void onClick(View v) {
+                    new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
+                        @Override
+                        public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
+                            time= before[0] ==null?now: before[0];
+                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                            time.set(Calendar.MINUTE,minute);
+                            dialog[0].cancel();//需要手动关闭对话框
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                        }
+                    }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();//钟表默认时间
+                }
+            });
+            //自定义对话框
+            dialog[0] = new AlertDialog.Builder(AddActivity.this)
+                    .setView(dialogView)
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    }).create();
+            //显示对话框
+            dialog[0].show();
+        }
+        return true;
+    }
+
     @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent intent) {
-        if (resultCode==RESULT_OK){
+        if (resultCode == RESULT_OK) {
             switch (requestCode) {
                 case REQUEST_PICTURE:
                     //要获取图片得先裁剪
@@ -239,18 +400,18 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         intent.putExtra("outputX", 600);
         intent.putExtra("outputY", 400);
         intent.putExtra("return-data", true);
-        startActivityForResult(intent,REQUEST_RESIZE);
+        startActivityForResult(intent, REQUEST_RESIZE);
     }
 
     private void showResizeImage(Intent intent) {
         Bundle bundle = intent.getExtras();
         if (bundle != null) {
             Bitmap bitmap = bundle.getParcelable("data");
-            Drawable drawable=ImageTransformation.bitmapToDrawable(bitmap);
+            Drawable drawable = ImageTransformation.bitmapToDrawable(bitmap);
             drawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);//设置灰色滤镜，降低图片亮度，使得文字清楚明显
             titleLayout.setBackground(drawable);
             assert bitmap != null;
-            picture=ImageTransformation.bitmapToByte(bitmap);
+            picture = ImageTransformation.bitmapToByte(bitmap);
         }
     }
 

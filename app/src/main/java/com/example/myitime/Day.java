@@ -2,16 +2,17 @@ package com.example.myitime;
 
 import java.io.Serializable;
 import java.util.ArrayList;
-import java.util.Date;
+import java.util.Calendar;
+import java.util.Calendar;
 
 public class Day implements Serializable {
     private byte[] picture;
     private String title,remark;
-    private Date time;
+    private Calendar time;
     private int period;
     private ArrayList<String> labels;
 
-    public Day(byte[] picture, String title, String remark, Date time,int period,ArrayList<String> labels) {
+    public Day(byte[] picture, String title, String remark, Calendar time,int period,ArrayList<String> labels) {
         this.picture = picture;
         this.title = title;
         this.remark = remark;
@@ -44,11 +45,11 @@ public class Day implements Serializable {
         this.remark = remark;
     }
 
-    public Date getTime() {
+    public Calendar getTime() {
         return time;
     }
 
-    public void setTime(Date time) {
+    public void setTime(Calendar time) {
         this.time = time;
     }
 
