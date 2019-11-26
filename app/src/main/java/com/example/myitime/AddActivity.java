@@ -9,6 +9,7 @@ import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
 import android.app.TimePickerDialog;
+import android.content.Context;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
@@ -32,18 +33,22 @@ import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
 import android.view.WindowManager;
+import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
+import android.widget.ToggleButton;
 
 import java.io.File;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
+import java.util.HashMap;
 
 import static com.example.myitime.ImageTransformation.bitmapToByte;
 import static com.example.myitime.ImageTransformation.drawableToBitmap;
@@ -146,7 +151,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 editText.setInputType(InputType.TYPE_CLASS_NUMBER);//设置只允许输入整数
                 editText.setGravity(Gravity.CENTER);
                 //对话框
-                AlertDialog dialog = new AlertDialog.Builder(AddActivity.this)
+                new AlertDialog.Builder(AddActivity.this)
                         .setTitle("周期")
                         .setView(editText)
                         .setNegativeButton("取消", new DialogInterface.OnClickListener() {
@@ -158,12 +163,13 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                         .setPositiveButton("确定", new DialogInterface.OnClickListener() {
                             @Override
                             public void onClick(DialogInterface dialog, int which) {
-                                period = Integer.parseInt(editText.getText().toString());
-                                periodText.setText(period + "天");
+                                if (editText.getText().length() != 0) {//注意判断是否输入非空！！
+                                    period = Integer.parseInt(editText.getText().toString());
+                                    periodText.setText(period + "天");
+                                }
                                 dialog.dismiss();
                             }
-                        }).create();
-                dialog.show();
+                        }).create().show();
                 break;
             default:
                 break;
@@ -171,7 +177,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         return super.onContextItemSelected(item);
     }
 
-    @SuppressLint("DefaultLocale")
+    @SuppressLint({"DefaultLocale", "InflateParams"})
     @Override
     public void onClick(View v) {
 
@@ -201,7 +207,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         else if (v == timeLayout) {
             //获取默认值：当前时间
             final Calendar nowTime = Calendar.getInstance();
-            time=Calendar.getInstance();
+            time = Calendar.getInstance();
             //日历控件
             DatePickerDialog date = new DatePickerDialog(AddActivity.this, new DatePickerDialog.OnDateSetListener() {
                 @Override
@@ -210,13 +216,13 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
 
                     //钟表控件
                     TimePickerDialog clock = new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
-//                        @RequiresApi(api = Build.VERSION_CODES.M)
+                        //                        @RequiresApi(api = Build.VERSION_CODES.M)
                         @Override
                         public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
+                            time.set(Calendar.HOUR_OF_DAY, hourOfDay);
                             time.set(Calendar.MINUTE, minute);
                             //注意，这句setText必须放在最里面的点击时间里面！不然放外面的话用户还没选好时间这句就执行了！出来的就是用户选时间之前的默认时间！
-                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR", time.getTime()));
                         }
                     }, nowTime.get(Calendar.HOUR_OF_DAY), nowTime.get(Calendar.MINUTE), true);//钟表默认时间
                     clock.show();
@@ -238,7 +244,71 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         }
 
         else if (v == labelLayout) {
-
+            //标签选择对话框
+            WordWrapLayout dialogView = new WordWrapLayout(AddActivity.this);
+            //先用假数据，到时候做设置页的时候建了数据库的时候再改
+            for (int i=0;i<FalseData.labels.size();i++){
+                LabelView labelView=new LabelView(AddActivity.this, FalseData.labels.get(i));
+                labelView.setChecked(FalseData.isLabelChecked.get(i));
+                dialogView.addView(labelView);
+            }
+            new AlertDialog.Builder(AddActivity.this)
+                    .setView(dialogView)
+                    .setNeutralButton("添加新标签", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //新增标签对话框
+                            final EditText editText = new EditText(AddActivity.this);
+                            editText.setHint("10个字符以内");
+                            editText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(10)}); //限制最多输入10个字符
+                            editText.setGravity(Gravity.CENTER);//居中显示
+                            new AlertDialog.Builder(AddActivity.this)
+                                    .setTitle("添加标签")
+                                    .setView(editText)//这样有个缺点，就是EditText会顶着对话框的两边，因为直接把EditText作为整个View然后setView了
+                                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            dialog.dismiss();
+                                        }
+                                    })
+                                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                                        @Override
+                                        public void onClick(DialogInterface dialog, int which) {
+                                            if (editText.getText().length() != 0) {//注意判断是否输入非空！！
+                                                //先用假数据，到时候做设置页的时候建了数据库的时候再改
+                                                FalseData.labels.add(editText.getText().toString());
+                                                FalseData.isLabelChecked.add(false);
+                                            }
+                                            dialog.dismiss();
+                                        }
+                                    }).create().show();
+                        }
+                    })
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            //先用假数据，到时候做设置页的时候建了数据库的时候再改
+                            StringBuilder showLabels=new StringBuilder("已选：");
+                            for (int i=0;i<FalseData.isLabelChecked.size();i++){
+                                if (FalseData.isLabelChecked.get(i)){
+                                    labels.add(FalseData.labels.get(i));
+                                    showLabels.append(FalseData.labels.get(i)+",");
+                                }
+                            }
+                            dialog.dismiss();
+                            if (new String(showLabels).equals("已选："))
+                                showLabels=new StringBuilder();//什么都没选就什么都不显示
+                            else
+                                showLabels.deleteCharAt(showLabels.length()-1);//去掉最后一个逗号
+                            labelText.setText(showLabels);
+                        }
+                    })
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                        }
+                    }).create().show();
         }
 
     }
@@ -246,29 +316,29 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
     @SuppressLint("DefaultLocale")
     @Override
     public boolean onLongClick(View v) {
-        if (v==timeLayout){
+        if (v == timeLayout) {
             //之所以这么诡异的变量声明是因为……final变量才能被内部匿名类访问，但final变量又不能被其他类修改，所以只能用长度为1的final数组了
-            final AlertDialog[] dialog={null};
+            final AlertDialog[] dialog = {null};
             //设置默认值
-            final Calendar now=Calendar.getInstance();
+            final Calendar now = Calendar.getInstance();
             final Calendar[] after = {null};
             final Calendar[] before = {null};
             //对话框布局
             @SuppressLint("InflateParams")
-            View dialogView=getLayoutInflater().inflate(R.layout.date_calculator,null);
+            View dialogView = getLayoutInflater().inflate(R.layout.date_calculator, null);
             //获取布局控件
-            final TextView nowShow=dialogView.findViewById(R.id.show_now);
-            final TextView afterShow=dialogView.findViewById(R.id.show_after);
-            final TextView beforeShow=dialogView.findViewById(R.id.show_before);
-            EditText afterEdit=dialogView.findViewById(R.id.edit_after);
-            EditText beforeEdit=dialogView.findViewById(R.id.edit_before);
-            ConstraintLayout nowSelect=dialogView.findViewById(R.id.select_now);
-            TextView afterSelect=dialogView.findViewById(R.id.select_after);
-            TextView beforeSelect=dialogView.findViewById(R.id.select_before);
+            final TextView nowShow = dialogView.findViewById(R.id.show_now);
+            final TextView afterShow = dialogView.findViewById(R.id.show_after);
+            final TextView beforeShow = dialogView.findViewById(R.id.show_before);
+            EditText afterEdit = dialogView.findViewById(R.id.edit_after);
+            EditText beforeEdit = dialogView.findViewById(R.id.edit_before);
+            ConstraintLayout nowSelect = dialogView.findViewById(R.id.select_now);
+            TextView afterSelect = dialogView.findViewById(R.id.select_after);
+            TextView beforeSelect = dialogView.findViewById(R.id.select_before);
             //默认先显示当前时间
-            nowShow.setText(String.format("%tY年%<tm月%<td日",now.getTime()));
-            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日",now.getTime()));
-            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日",now.getTime()));
+            nowShow.setText(String.format("%tY年%<tm月%<td日", now.getTime()));
+            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日", now.getTime()));
+            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日", now.getTime()));
             //限制输入框只能输入四位整数
             afterEdit.setInputType(InputType.TYPE_CLASS_NUMBER);//限制只能输入整数
             afterEdit.setFilters(new InputFilter[]{new InputFilter.LengthFilter(4)}); //限制只能输入四位数
@@ -277,35 +347,43 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
             //输入监听事件，与输入框同步计算日期
             afterEdit.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int beforeStart, int count) {
                     //不能这样！相当于把now的引用给了after[0]！after[0]一变now就跟着变了！Java跟C++不一样！易错！这样做的后果是：我打一个12再按一下退格变成2，我本来想要从+12变成+1的效果的，结果变成+12之后再+1就变成+13了
 //                    after[0]=now;
 //                    if (s.length()!=0)
 //                        after[0].add(Calendar.DATE,Integer.parseInt(s.toString()));
-                    after[0]=Calendar.getInstance();
-                    after[0].set(now.get(Calendar.YEAR),now.get(Calendar.MONTH),now.get(Calendar.DAY_OF_MONTH));//输入框为空默认值为now
-                    if (s.length()!=0)//输入框不为空才调用日期计算
-                        after[0].add(Calendar.DATE,Integer.parseInt(s.toString()));
+                    after[0] = Calendar.getInstance();
+                    after[0].set(now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));//输入框为空默认值为now
+                    if (s.length() != 0)//输入框不为空才调用日期计算
+                        after[0].add(Calendar.DATE, Integer.parseInt(s.toString()));
                     afterShow.setText(String.format("天之后：%tY年%<tm月%<td日", after[0].getTime()));
                 }
+
                 @Override
-                public void afterTextChanged(Editable s) {}
+                public void afterTextChanged(Editable s) {
+                }
             });
             beforeEdit.addTextChangedListener(new TextWatcher() {
                 @Override
-                public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+                public void beforeTextChanged(CharSequence s, int start, int count, int after) {
+                }
+
                 @Override
                 public void onTextChanged(CharSequence s, int start, int beforeStart, int count) {
-                    before[0]=Calendar.getInstance();
-                    before[0].set(now.get(Calendar.YEAR),now.get(Calendar.MONTH),now.get(Calendar.DAY_OF_MONTH));
-                    if (s.length()!=0)
-                        before[0].add(Calendar.DATE,-Integer.parseInt(s.toString()));
+                    before[0] = Calendar.getInstance();
+                    before[0].set(now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH));
+                    if (s.length() != 0)
+                        before[0].add(Calendar.DATE, -Integer.parseInt(s.toString()));
                     beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日", before[0].getTime()));
                 }
+
                 @Override
-                public void afterTextChanged(Editable s) {}
+                public void afterTextChanged(Editable s) {
+                }
             });
             //点击事件
             nowSelect.setOnClickListener(new View.OnClickListener() {
@@ -315,10 +393,10 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                     new DatePickerDialog(AddActivity.this, new DatePickerDialog.OnDateSetListener() {
                         @Override
                         public void onDateSet(DatePicker datePicker, int year, int monthOfYear, int dayOfMonth) {
-                            now.set(year,monthOfYear,dayOfMonth);
-                            nowShow.setText(String.format("%tY年%<tm月%<td日",now.getTime()));
-                            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日",now.getTime()));
-                            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日",now.getTime()));
+                            now.set(year, monthOfYear, dayOfMonth);
+                            nowShow.setText(String.format("%tY年%<tm月%<td日", now.getTime()));
+                            afterShow.setText(String.format("天之后：%tY年%<tm月%<td日", now.getTime()));
+                            beforeShow.setText(String.format("天之前：%tY年%<tm月%<td日", now.getTime()));
                         }
                     }, now.get(Calendar.YEAR), now.get(Calendar.MONTH), now.get(Calendar.DAY_OF_MONTH)).show();//日历默认日期
                 }
@@ -329,11 +407,11 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                     new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
                         @Override
                         public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-                            time=after[0]==null?now:after[0];
-                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
-                            time.set(Calendar.MINUTE,minute);
-                            dialog[0].cancel();//需要手动关闭对话框
-                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                            time = after[0] == null ? now : after[0];
+                            time.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                            time.set(Calendar.MINUTE, minute);
+                            dialog[0].dismiss();//需要手动关闭对话框
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR", time.getTime()));
                         }
                     }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();//钟表默认时间
                 }
@@ -344,11 +422,11 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                     new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
                         @Override
                         public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
-                            time= before[0] ==null?now: before[0];
-                            time.set(Calendar.HOUR_OF_DAY,hourOfDay);
-                            time.set(Calendar.MINUTE,minute);
+                            time = before[0] == null ? now : before[0];
+                            time.set(Calendar.HOUR_OF_DAY, hourOfDay);
+                            time.set(Calendar.MINUTE, minute);
                             dialog[0].cancel();//需要手动关闭对话框
-                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR",time.getTime()));
+                            timeText.setText(String.format("%tY年%<tm月%<td日 %<tR", time.getTime()));
                         }
                     }, now.get(Calendar.HOUR_OF_DAY), now.get(Calendar.MINUTE), true).show();//钟表默认时间
                 }
@@ -415,4 +493,27 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         }
     }
 
+    private class LabelView extends ToggleButton {
+
+        public LabelView(Context context, final String text) {
+            super(context);
+            setText(text);
+            setTextOn("√" + text);
+            setTextOff(text);
+            setBackgroundResource(R.drawable.label_background);
+            setOnCheckedChangeListener(new OnCheckedChangeListener() {
+                @Override
+                public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
+                    //先用假数据，到时候做设置页的时候建了数据库的时候再改
+                    for (int i=0;i<FalseData.labels.size();i++){
+                        String name=FalseData.labels.get(i);
+                        if (name.equals(buttonView.getText().toString())||("√"+name).equals(buttonView.getText().toString())){
+                            FalseData.isLabelChecked.set(i,isChecked);
+                        }
+                    }
+                }
+            });
+        }
+
+    }
 }

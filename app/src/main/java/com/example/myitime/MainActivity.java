@@ -42,7 +42,6 @@ public class MainActivity extends AppCompatActivity{
         buttonAdd=findViewById(R.id.button_add);
         buttonAdd.bringToFront();
 
-        days=new ArrayList<>();
         daysListAdapter=new DaysAdapter(MainActivity.this,R.layout.day_item,days);
         daysListView.setAdapter(daysListAdapter);
         for (int i=0;i<defaultPicturesId.length;i++){
