@@ -22,15 +22,13 @@
             <!--底部+右侧阴影-->
 
             <TextView
-                android:id="@+id/day_picture"
+                android:id="@+id/day_timing"
                 android:layout_width="0dp"
                 android:layout_height="match_parent"
                 android:layout_weight="1"
                 android:textColor="@color/text_color"
                 android:textSize="15dp"
                 android:gravity="center"/>
-                <!--android:scaleType="fitCenter"/>-->
-            <!--图片宽（高）不等于ImageView的宽（高）时，按比例缩放，使得图片宽度（高度）等于ImageView的宽度（高度），居中显示。-->
 
             <LinearLayout
                 android:layout_width="0dp"

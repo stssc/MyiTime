@@ -247,11 +247,11 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
             DatePickerDialog date = new DatePickerDialog(AddActivity.this, new DatePickerDialog.OnDateSetListener() {
                 @Override
                 public void onDateSet(DatePicker datePicker, int year, int monthOfYear, int dayOfMonth) {
-                    time.set(year, monthOfYear + 1, dayOfMonth);
+                    time.set(year, monthOfYear, dayOfMonth);
 
                     //钟表控件
                     TimePickerDialog clock = new TimePickerDialog(AddActivity.this, new TimePickerDialog.OnTimeSetListener() {
-                        //                        @RequiresApi(api = Build.VERSION_CODES.M)
+                        //@RequiresApi(api = Build.VERSION_CODES.M)
                         @Override
                         public void onTimeSet(TimePicker timePicker, int hourOfDay, int minute) {
                             time.set(Calendar.HOUR_OF_DAY, hourOfDay);

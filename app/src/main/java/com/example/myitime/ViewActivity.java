@@ -7,6 +7,9 @@ import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
+import android.os.Handler;
+import android.os.Message;
+import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -17,16 +20,24 @@ import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import java.util.Calendar;
+
 public class ViewActivity extends AppCompatActivity implements View.OnClickListener {
     public static final int RESULT_DELETE = -123;
     public static final int REQUEST_EDIT = 1;
     public static final int RESULT_BACK = 123;
+    public static final int TIME_CHANGE = 0;
+
     private ConstraintLayout titleLayout;
     private ImageButton buttonBack,buttonDelete,buttonEdit;
     private TextView title,date,timing;
     private int position;
     private Day day;
 
+    private Handler handler;
+    private boolean isAlive=true;
+
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -52,10 +63,31 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
         buttonBack.setOnClickListener(this);
         buttonDelete.setOnClickListener(this);
         buttonEdit.setOnClickListener(this);
+
+        handler=new Handler(){
+          @Override
+          public void handleMessage(Message msg){
+              if (msg.what==TIME_CHANGE)
+                timing.setText(String.valueOf(msg.obj));
+          }
+        };
+    }
+
+    @Override
+    protected void onRestart(){
+        isAlive=true;
+        new Timer().start();
+        super.onRestart();
+    }
+
+    @Override
+    protected void onStop() {//被隐藏的时候就应该停止计时线程，否则跳转到AddActivity后它依然会一直消耗内存下去
+        isAlive=false;
+        super.onStop();
     }
 
     @SuppressLint("DefaultLocale")
-    private void init(Day day) {
+    private void init(final Day day) {
         //背景图片
         assert day != null;
         Drawable drawable=ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(day.getPicture()));
@@ -65,6 +97,8 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
         title.setText(day.getTitle());
         date.setText(String.format("%tY年%<tm月%<td日 %<ta",day.getTime().getTime()));
         //倒计时
+        new Timer().start();
+
     }
 
     @Override
@@ -114,6 +148,61 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
                 break;
             default:
                 break;
+        }
+    }
+
+    private class Timer extends Thread{
+        @Override
+        public void run(){
+            while (isAlive){
+                StringBuilder stringDelta=new StringBuilder();
+                Calendar now=Calendar.getInstance();
+                long deltaYear=now.get(Calendar.YEAR)-day.getTime().get(Calendar.YEAR);//先计算相差多少年
+                System.out.println(deltaYear);
+                if (deltaYear!=0){
+                    now.set(Calendar.YEAR,day.getTime().get(Calendar.YEAR));//设为同年后再计算相差多少天
+                    long delta=now.getTimeInMillis()-day.getTime().getTimeInMillis();
+                    if (deltaYear*delta<0){//实际相差不到deltaYear年
+                        if (deltaYear>0){
+                            deltaYear--;
+                            now.set(Calendar.YEAR,now.get(Calendar.YEAR)+1);
+                        }
+                        else{
+                            deltaYear++;
+                            now.set(Calendar.YEAR,now.get(Calendar.YEAR)-1);
+                        }
+                    }
+                    else {
+                        now.set(Calendar.YEAR, day.getTime().get(Calendar.YEAR)+(int)deltaYear);
+                    }
+                }
+                deltaYear=Math.abs(deltaYear);
+                System.out.println(now.getTime());
+                long sameYearDelta=Math.abs(now.getTimeInMillis()-day.getTime().getTimeInMillis());
+                System.out.println(sameYearDelta);
+                long deltaDay=sameYearDelta/(1000*60*60*24);
+                long deltaHour=sameYearDelta%(1000*60*60*24)/(1000*60*60);
+                long deltaMinute=sameYearDelta%(1000*60*60)/(1000*60);
+                long deltaSecond=sameYearDelta%(1000*60)/1000;
+                if (deltaYear!=0)
+                    stringDelta.append(deltaYear).append("年");
+                if (deltaDay!=0)
+                    stringDelta.append(deltaDay).append("天");
+                if (deltaHour!=0)
+                    stringDelta.append(deltaHour).append("小时");
+                if (deltaMinute!=0)
+                    stringDelta.append(deltaMinute).append("分钟");
+                stringDelta.append(deltaSecond).append("秒");
+                Message msg=handler.obtainMessage();
+                msg.what=TIME_CHANGE;
+                msg.obj=stringDelta;
+                handler.sendMessage(msg);
+                try {
+                    Thread.sleep(1000);
+                } catch (InterruptedException e) {
+                    e.printStackTrace();
+                }
+            }
         }
     }
 
