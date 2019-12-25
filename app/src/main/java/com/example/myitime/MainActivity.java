@@ -1,5 +1,6 @@
 package com.example.myitime;
 
+import android.annotation.SuppressLint;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
@@ -28,13 +29,14 @@ import java.util.ArrayList;
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     public static final int REQUEST_ADD = 0;
     public static final int REQUEST_VIEW = 1;
-    public static final String CACHE_FILE_NAME = "Goods.txt";
+    public static final String CACHE_FILE_NAME = "days.txt";
     public static final int[] defaultPicturesId=new int[]{R.drawable.default1,R.drawable.default2,R.drawable.default3,R.drawable.default4};
     public static final Drawable[] defaultPictures=new Drawable[defaultPicturesId.length];
 
     private ArrayList<Day> days;
     private DaysAdapter daysListAdapter;
 
+    @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -66,7 +68,15 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         for (int i=0;i<defaultPicturesId.length;i++){
             defaultPictures[i]=getResources().getDrawable(defaultPicturesId[i]);
         }
+        //数据同步（注意数据同步要放在adapter之前！不然读到了数据也不显示！）
         days=new ArrayList<>();
+        try {
+            ObjectInputStream objectInputStream = new ObjectInputStream(MainActivity.this.openFileInput(CACHE_FILE_NAME));
+            days=(ArrayList<Day>)objectInputStream.readObject();
+            objectInputStream.close();
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
         daysListAdapter = new DaysAdapter(MainActivity.this,R.layout.day_item,days);
         ListView daysListView = findViewById(R.id.day_list);
         daysListView.setAdapter(daysListAdapter);
@@ -79,14 +89,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 startActivityForResult(intent,REQUEST_VIEW);
             }
         });
-        //数据同步
-        try {
-            ObjectInputStream objectInputStream = new ObjectInputStream(openFileInput(CACHE_FILE_NAME));
-            days=(ArrayList<Day>)objectInputStream.readObject();
-            objectInputStream.close();
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
+    }
+
+    //在onRestart()和onDestroy()都做数据保存是为了避免某些用户像我喜欢直接按手机菜单键杀掉进程，这样App都来不及执行onDestroy就结束了，这样做能较大程度的减小用户数据丢失。本来其实在每次AddActivity按下buttonOK时做一次保存最好，因为基本上数据都是在AddActivity修改的，但是本项目的设计是只有MainActivity拥有管理数据的权力，所以如果要在AddActivity那一步就保存数据，需通知MainActivity，但这样保存的数据也不是完整的，因为活动的迁移顺序可能是Main->View->Add->View->Main，当从AddActivity回到ViewActivity时，ViewActivity还没有将最新的数据传回给MainActivity
+
+    @Override
+    protected void onRestart() {
+        save();
+        super.onRestart();
+    }
+
+    @Override
+    protected void onDestroy() {
+        save();
+        save();
+        super.onDestroy();
     }
 
     @Override
@@ -179,16 +196,14 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         }
     }
 
-    @Override
-    public void onDestroy(){
+    private void save(){
         try {
-            ObjectOutputStream objectOutputStream = new ObjectOutputStream(openFileOutput(CACHE_FILE_NAME, Context.MODE_PRIVATE));//调用Context的openFileOutput方法打开App内部文件
+            ObjectOutputStream objectOutputStream = new ObjectOutputStream(MainActivity.this.openFileOutput(CACHE_FILE_NAME, Context.MODE_PRIVATE));//调用Context的openFileOutput方法打开App内部文件
             objectOutputStream.writeObject(days);//将序列化对象days通过对象输出流写入内部文件
             objectOutputStream.close();//记得关闭输出流！！
         } catch (IOException e) {
             e.printStackTrace();
         }
-        super.onDestroy();
     }
 
 }

@@ -171,9 +171,6 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
                             now.set(Calendar.YEAR,now.get(Calendar.YEAR)-1);
                         }
                     }
-                    else {
-                        now.set(Calendar.YEAR, day.getTime().get(Calendar.YEAR)+(int)deltaYear);
-                    }
                 }
                 deltaYear=Math.abs(deltaYear);
                 System.out.println(now.getTime());
