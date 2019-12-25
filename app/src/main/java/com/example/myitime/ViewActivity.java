@@ -9,7 +9,6 @@ import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
-import android.util.Log;
 import android.view.View;
 import android.widget.ImageButton;
 import android.widget.TextView;
@@ -106,7 +105,7 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
         if (v==buttonBack){
             Intent intent=getIntent();
             intent.putExtra("new_day",day);
-            setResult(RESULT_BACK);
+            setResult(RESULT_BACK,intent);
             finish();
         }
         else if (v==buttonDelete){

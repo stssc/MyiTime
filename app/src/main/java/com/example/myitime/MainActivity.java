@@ -4,7 +4,6 @@ import android.content.Context;
 import android.content.Intent;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
-import android.util.Log;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
@@ -25,7 +24,6 @@ import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.util.ArrayList;
-import java.util.Objects;
 
 public class MainActivity extends AppCompatActivity implements NavigationView.OnNavigationItemSelectedListener {
     public static final int REQUEST_ADD = 0;
@@ -173,9 +171,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 }
                 else if (resultCode==ViewActivity.RESULT_BACK){
                     assert intent != null;
-                    Log.d("hhh","get"+((Day) Objects.requireNonNull(intent.getSerializableExtra("new_day"))).getTitle());
-                    Log.d("hhh",intent.getIntExtra("position",-1)+"");
-                    days.set(intent.getIntExtra("position",-1),(Day)intent.getSerializableExtra("day"));
+                    days.set(intent.getIntExtra("position",-1),((Day)intent.getSerializableExtra("new_day")));
                     daysListAdapter.notifyDataSetChanged();
                 }
             default:
