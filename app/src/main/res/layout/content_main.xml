@@ -11,6 +11,7 @@
     <ListView
         android:id="@+id/day_list"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"/>
+        android:layout_height="match_parent"
+        android:divider="@null"/><!--去掉分割线-->
 
 </androidx.constraintlayout.widget.ConstraintLayout>

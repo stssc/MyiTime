@@ -1,10 +1,5 @@
 package com.example.myitime;
 
-import androidx.annotation.RequiresApi;
-import androidx.appcompat.app.ActionBar;
-import androidx.appcompat.app.AppCompatActivity;
-import androidx.constraintlayout.widget.ConstraintLayout;
-
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
 import android.app.DatePickerDialog;
@@ -14,44 +9,35 @@ import android.content.DialogInterface;
 import android.content.Intent;
 import android.graphics.Bitmap;
 import android.graphics.Color;
-import android.graphics.ColorMatrix;
-import android.graphics.ColorMatrixColorFilter;
 import android.graphics.PorterDuff;
-import android.graphics.drawable.BitmapDrawable;
 import android.graphics.drawable.Drawable;
 import android.net.Uri;
-import android.os.Build;
 import android.os.Bundle;
 import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
-import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
 import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
 import android.widget.TextView;
 import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
-import java.io.File;
+import androidx.appcompat.app.ActionBar;
+import androidx.appcompat.app.AppCompatActivity;
+import androidx.constraintlayout.widget.ConstraintLayout;
+
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-
-import static com.example.myitime.ImageTransformation.bitmapToByte;
-import static com.example.myitime.ImageTransformation.drawableToBitmap;
+import java.util.Objects;
 
 public class AddActivity extends AppCompatActivity implements View.OnClickListener, View.OnLongClickListener {
     public static final int GROUP_1 = 1;
@@ -79,7 +65,6 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
 
-        intent = getIntent();
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.hide();
@@ -115,6 +100,56 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         this.registerForContextMenu(periodLayout);//注册上下文菜单，不然点击了没反应
         periodLayout.setOnLongClickListener(this);//但是又不想让它长按了也创建上下文菜单，只能写一个空的事件把它长按的响应事件重写掉了
 
+        intent = getIntent();
+        if (Objects.equals(intent.getStringExtra("from"), "ViewActivity")){
+            init();
+        }
+
+    }
+
+    @SuppressLint({"SetTextI18n", "DefaultLocale"})
+    private void init() {
+        Intent intent=getIntent();
+        Day day=(Day)intent.getSerializableExtra("day");
+        assert day != null;
+        //记得同步数据
+        time=day.getTime();
+        period=day.getPeriod();
+        picture=day.getPicture();
+        labels=day.getLabels();
+        //背景图片，标题
+        Drawable drawable= ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(day.getPicture()));
+        drawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);//设置灰色滤镜，降低图片亮度，使得文字清楚明显
+        titleLayout.setBackground(drawable);
+        titleEdit.setText(day.getTitle());
+        remarkEdit.setText(day.getRemark());
+        //日期、周期、标签
+        timeText.setText(String.format("%tY年%<tm月%<td日 %<tR", time.getTime()));
+        switch (period) {
+            case MENU_ITEM_NULL:
+                periodText.setText("无");
+                break;
+            case MENU_ITEM_WEEK:
+                periodText.setText("每周");
+                break;
+            case MENU_ITEM_MONTH:
+                periodText.setText("每月");
+                break;
+            case MENU_ITEM_YEAR:
+                periodText.setText("每年");
+                break;
+            default:
+                periodText.setText(period+"天");
+                break;
+        }
+        if (labels.size()!=0){
+            StringBuilder showLabels=new StringBuilder("已选：");
+            for (String label:labels){
+                showLabels.append(label).append(",");
+            }
+            showLabels.deleteCharAt(showLabels.length()-1);//去掉最后一个逗号
+            labelText.setText(showLabels);
+        }
     }
 
     @Override
