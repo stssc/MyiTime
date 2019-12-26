@@ -1,4 +1,4 @@
-package com.example.myitime;
+package com.example.myitime.activity;
 
 import android.annotation.SuppressLint;
 import android.app.AlertDialog;
@@ -17,6 +17,7 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
+import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.Menu;
@@ -31,12 +32,21 @@ import android.widget.TimePicker;
 import android.widget.Toast;
 import android.widget.ToggleButton;
 
+import androidx.annotation.NonNull;
 import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
+import com.example.myitime.R;
+import com.example.myitime.function.Data;
+import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.model.Day;
+import com.example.myitime.model.Label;
+import com.example.myitime.view.WordWrapLayout;
+
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Objects;
 
 public class AddActivity extends AppCompatActivity implements View.OnClickListener, View.OnLongClickListener {
@@ -58,7 +68,8 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
     private Calendar time = null;
     private int period = 0;
     private byte[] picture = null;
-    private ArrayList<String> labels = new ArrayList<>();
+    private HashMap<String,Boolean> dayLabels = new HashMap<>();
+    private ArrayList<Label> labels=new ArrayList<>();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -100,15 +111,26 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         this.registerForContextMenu(periodLayout);//注册上下文菜单，不然点击了没反应
         periodLayout.setOnLongClickListener(this);//但是又不想让它长按了也创建上下文菜单，只能写一个空的事件把它长按的响应事件重写掉了
 
+        labels=Data.getLabels(AddActivity.this);//不管从哪来都要加载labels的
         intent = getIntent();
-        if (Objects.equals(intent.getStringExtra("from"), "ViewActivity")){
-            init();
+        if (Objects.equals(intent.getStringExtra("from"), "ViewActivity")){//从ViewActivity来的，说明是要改数据，需要加载Day对象（包括里面的dayLabels）
+            initDay();
+        }
+        else if (Objects.equals(intent.getStringExtra("from"),"MainActivity")){//从MainActivity来的，说明是要加数据，需要加载标签集Data.labels
+            initLabels();
         }
 
     }
 
+    private void initLabels() {
+        for (Label label:labels){
+            dayLabels.put(label.getName(),false);//默认不选
+        }
+    }
+
     @SuppressLint({"SetTextI18n", "DefaultLocale"})
-    private void init() {
+    @NonNull
+    private void initDay() {
         Intent intent=getIntent();
         Day day=(Day)intent.getSerializableExtra("day");
         assert day != null;
@@ -116,7 +138,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         time=day.getTime();
         period=day.getPeriod();
         picture=day.getPicture();
-        labels=day.getLabels();
+        dayLabels=day.getLabels();
         //背景图片，标题
         Drawable drawable= ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(day.getPicture()));
         drawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);//设置灰色滤镜，降低图片亮度，使得文字清楚明显
@@ -142,11 +164,15 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 periodText.setText(period+"天");
                 break;
         }
-        if (labels.size()!=0){
-            StringBuilder showLabels=new StringBuilder("已选：");
-            for (String label:labels){
-                showLabels.append(label).append(",");
+        Log.d("hhh","what are you doing??");
+        StringBuilder showLabels=new StringBuilder("已选：");
+        for (Label label:labels){
+            Log.d("hhh",label.getName()+dayLabels.get(label.getName())+"");
+            if (dayLabels.get(label.getName())){//标签选中
+                showLabels.append(label.getName()).append(",");
             }
+        }
+        if (!new String(showLabels).equals("已选")){//说明已有选中的标签
             showLabels.deleteCharAt(showLabels.length()-1);//去掉最后一个逗号
             labelText.setText(showLabels);
         }
@@ -232,7 +258,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 if (picture == null)
                     //用户没有选择图片则设置为默认图片
                     picture = ImageTransformation.bitmapToByte(ImageTransformation.drawableToBitmap(MainActivity.defaultPictures[intent.getIntExtra("position", 0) % MainActivity.defaultPictures.length]));
-                Day day = new Day(picture, title, remark, time, period, labels);
+                Day day = new Day(picture, title, remark, time, period, dayLabels);
                 intent.putExtra("day", day);
                 setResult(RESULT_OK, intent);
                 finish();
@@ -279,12 +305,17 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         }
 
         else if (v == labelLayout) {
+            //读取标签集数据
+            labels=Data.getLabels(AddActivity.this);
             //标签选择对话框
             WordWrapLayout dialogView = new WordWrapLayout(AddActivity.this);
             //先用假数据，到时候做设置页的时候建了数据库的时候再改
-            for (int i=0;i<FalseData.labels.size();i++){
-                LabelView labelView=new LabelView(AddActivity.this, FalseData.labels.get(i));
-                labelView.setChecked(FalseData.isLabelChecked.get(i));
+            for (Label label:labels){
+                LabelView labelView=new LabelView(AddActivity.this, label.getName());
+                if (dayLabels.get(label.getName())!=null)
+                    labelView.setChecked(dayLabels.get(label.getName()));
+                else
+                    labelView.setChecked(false);
                 dialogView.addView(labelView);
             }
             new AlertDialog.Builder(AddActivity.this)
@@ -311,8 +342,9 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                                         public void onClick(DialogInterface dialog, int which) {
                                             if (editText.getText().length() != 0) {//注意判断是否输入非空！！
                                                 //先用假数据，到时候做设置页的时候建了数据库的时候再改
-                                                FalseData.labels.add(editText.getText().toString());
-                                                FalseData.isLabelChecked.add(false);
+                                                labels.add(new Label(editText.getText().toString()));
+                                                dayLabels.put(editText.getText().toString(),false);//默认不选
+                                                Data.setLabels(AddActivity.this,labels);
                                             }
                                             dialog.dismiss();
                                         }
@@ -324,10 +356,9 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                         public void onClick(DialogInterface dialog, int which) {
                             //先用假数据，到时候做设置页的时候建了数据库的时候再改
                             StringBuilder showLabels=new StringBuilder("已选：");
-                            for (int i=0;i<FalseData.isLabelChecked.size();i++){
-                                if (FalseData.isLabelChecked.get(i)){
-                                    labels.add(FalseData.labels.get(i));
-                                    showLabels.append(FalseData.labels.get(i)+",");
+                            for (Label label:labels){
+                                if (dayLabels.get(label.getName())){
+                                    showLabels.append(label.getName()).append(",");
                                 }
                             }
                             dialog.dismiss();
@@ -532,6 +563,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
 
         public LabelView(Context context, final String text) {
             super(context);
+            setAllCaps(false);//取消按钮上文字自动大写
             setText(text);
             setTextOn("√" + text);
             setTextOff(text);
@@ -539,12 +571,17 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
             setOnCheckedChangeListener(new OnCheckedChangeListener() {
                 @Override
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
-                    //先用假数据，到时候做设置页的时候建了数据库的时候再改
-                    for (int i=0;i<FalseData.labels.size();i++){
-                        String name=FalseData.labels.get(i);
-                        if (name.equals(buttonView.getText().toString())||("√"+name).equals(buttonView.getText().toString())){
-                            FalseData.isLabelChecked.set(i,isChecked);
-                        }
+                    String content=buttonView.getText().toString();
+                    if (isChecked) {
+                        Log.d("hhh",content+isChecked);
+                        dayLabels.remove(content);
+                        dayLabels.put(content,true);
+                    }
+                    else{
+                        String name=content.substring(1,content.length());//这有个坑：输出日志发现这里的name是开关触发前的name，也就是说，选中变成"√xxx"的时候，获取到的name是xxx，取消变成"xxx"的时候，获取到的name是"√xxx"，我无语了
+                        Log.d("hhh",name+isChecked);
+                        dayLabels.remove(content);
+                        dayLabels.put(name,false);
                     }
                 }
             });

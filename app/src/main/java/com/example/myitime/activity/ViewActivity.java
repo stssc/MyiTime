@@ -1,4 +1,4 @@
-package com.example.myitime;
+package com.example.myitime.activity;
 
 import android.annotation.SuppressLint;
 import android.content.DialogInterface;
@@ -18,6 +18,10 @@ import androidx.appcompat.app.ActionBar;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
+
+import com.example.myitime.R;
+import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.model.Day;
 
 import java.util.Calendar;
 
@@ -89,7 +93,7 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
     private void init(final Day day) {
         //背景图片
         assert day != null;
-        Drawable drawable=ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(day.getPicture()));
+        Drawable drawable= ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(day.getPicture()));
         drawable.setColorFilter(Color.GRAY, PorterDuff.Mode.MULTIPLY);//设置灰色滤镜，降低图片亮度，使得文字清楚明显
         titleLayout.setBackground(drawable);
         //标题、日期

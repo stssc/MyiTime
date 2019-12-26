@@ -1,4 +1,4 @@
-package com.example.myitime;
+package com.example.myitime.view;
 
 import android.content.Context;
 import android.util.AttributeSet;

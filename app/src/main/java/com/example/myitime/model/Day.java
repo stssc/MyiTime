@@ -1,18 +1,17 @@
-package com.example.myitime;
+package com.example.myitime.model;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Calendar;
+import java.util.HashMap;
 
 public class Day implements Serializable {
     private byte[] picture;
     private String title,remark;
     private Calendar time;
     private int period;
-    private ArrayList<String> labels;
+    private HashMap<String,Boolean> labels;
 
-    public Day(byte[] picture, String title, String remark, Calendar time,int period,ArrayList<String> labels) {
+    public Day(byte[] picture, String title, String remark, Calendar time,int period,HashMap<String,Boolean> labels) {
         this.picture = picture;
         this.title = title;
         this.remark = remark;
@@ -53,11 +52,11 @@ public class Day implements Serializable {
         this.time = time;
     }
 
-    public ArrayList<String> getLabels() {
+    public HashMap<String, Boolean> getLabels() {
         return labels;
     }
 
-    public void setLabels(ArrayList<String> labels) {
+    public void setLabels(HashMap<String,Boolean> labels) {
         this.labels = labels;
     }
 

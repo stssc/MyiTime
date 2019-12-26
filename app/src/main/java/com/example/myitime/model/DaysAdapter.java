@@ -1,4 +1,4 @@
-package com.example.myitime;
+package com.example.myitime.model;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -14,6 +14,9 @@ import android.widget.TextView;
 import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
+
+import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.R;
 
 import net.qiujuer.genius.blur.StackBlur;
 
@@ -44,7 +47,7 @@ public class DaysAdapter extends ArrayAdapter<Day> {
         //对布局里的控件进行更新操作
         Day day= this.getItem(position);
         assert day != null;
-        Bitmap bitmap=ImageTransformation.byteToBitmap(day.getPicture());
+        Bitmap bitmap= ImageTransformation.byteToBitmap(day.getPicture());
         bitmap= StackBlur.blur(bitmap,10,false);//设置图片模糊
         Drawable drawable=ImageTransformation.bitmapToDrawable(bitmap);
         drawable.setColorFilter(getContext().getResources().getColor(R.color.grey_primary), PorterDuff.Mode.MULTIPLY);//设置灰色滤镜，降低图片亮度，使得文字清楚明显
