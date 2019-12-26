@@ -22,6 +22,8 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.CompoundButton;
 import android.widget.DatePicker;
 import android.widget.EditText;
@@ -74,11 +76,15 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_add);
-
+        //隐藏标题栏
         ActionBar actionBar = getSupportActionBar();
         if (actionBar != null) {
             actionBar.hide();
         }
+        //同步状态栏主题色
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Data.getThemeColor(AddActivity.this));
 
         buttonBack = findViewById(R.id.button_back);
         buttonOK = findViewById(R.id.button_ok);
@@ -242,6 +248,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
 
         if (v == buttonBack) {
             finish();
+            overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity退出动画
         }
 
         else if (v == buttonOK) {
@@ -260,6 +267,7 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 intent.putExtra("day", day);
                 setResult(RESULT_OK, intent);
                 finish();
+                overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity退出动画
             }
         }
 

@@ -10,6 +10,8 @@ import android.os.Bundle;
 import android.os.Handler;
 import android.os.Message;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.ImageButton;
 import android.widget.TextView;
 
@@ -21,6 +23,7 @@ import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.myitime.R;
 import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.model.Data;
 import com.example.myitime.model.Day;
 
 import java.util.Calendar;
@@ -50,6 +53,10 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
         if (actionBar!=null){
             actionBar.hide();
         }
+        //同步状态栏主题色
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(Data.getThemeColor(ViewActivity.this));
 
         titleLayout=findViewById(R.id.title_layout);
         buttonBack=findViewById(R.id.button_back);
@@ -111,6 +118,7 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
             intent.putExtra("new_day",day);
             setResult(RESULT_BACK,intent);
             finish();
+            overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity退出动画
         }
         else if (v==buttonDelete){
             new AlertDialog.Builder(ViewActivity.this)
@@ -135,6 +143,7 @@ public class ViewActivity extends AppCompatActivity implements View.OnClickListe
             intent.putExtra("from","ViewActivity");
             intent.putExtra("day",day);
             startActivityForResult(intent,REQUEST_EDIT);
+            overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity启动动画
         }
     }
 

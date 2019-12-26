@@ -67,6 +67,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 intent.putExtra("from","MainActivity");
                 intent.putExtra("position",days.size());
                 startActivityForResult(intent,REQUEST_ADD);
+                overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity启动动画
             }
         });
         //左侧导航抽屉
@@ -96,6 +97,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 intent.putExtra("position",position);
                 intent.putExtra("day",days.get(position));
                 startActivityForResult(intent,REQUEST_VIEW);
+                overridePendingTransition(R.anim.top_defaults_view_color_picker_popup_show,R.anim.top_defaults_view_color_picker_popup_hide);//设置Activity启动动画
             }
         });
     }
