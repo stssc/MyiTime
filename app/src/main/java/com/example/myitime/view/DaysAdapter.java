@@ -1,4 +1,4 @@
-package com.example.myitime.model;
+package com.example.myitime.view;
 
 import android.annotation.SuppressLint;
 import android.content.Context;
@@ -17,6 +17,7 @@ import androidx.annotation.Nullable;
 
 import com.example.myitime.function.ImageTransformation;
 import com.example.myitime.R;
+import com.example.myitime.model.Day;
 
 import net.qiujuer.genius.blur.StackBlur;
 
@@ -68,8 +69,11 @@ public class DaysAdapter extends ArrayAdapter<Day> {
         if (delta>0 && deltaDay>0){//已经XX天
             img.setText("已经\n"+deltaDay+"天");
         }
-        else if (delta>=0 && deltaDay==0){//今天
+        else if (delta>=0 && deltaDay==0 && now.get(Calendar.DAY_OF_YEAR)==time.get((Calendar.DAY_OF_YEAR))){//今天
             img.setText("今天");
+        }
+        else if (delta>=0 && deltaDay==0 && now.get(Calendar.DAY_OF_YEAR)!=time.get(Calendar.DAY_OF_YEAR)){//已经XX小时
+            img.setText("已经\n"+Math.abs(delta/(1000*60*60))+"小时");
         }
         else if (delta<0 && deltaDay<0){//还有XX天
             img.setText("还有\n"+Math.abs(deltaDay)+"天");

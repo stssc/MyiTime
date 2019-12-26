@@ -1,27 +1,35 @@
 package com.example.myitime.activity;
 
 import android.annotation.SuppressLint;
+import android.content.DialogInterface;
 import android.content.Intent;
+import android.content.res.ColorStateList;
+import android.graphics.Color;
+import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
 import android.view.View;
+import android.view.Window;
+import android.view.WindowManager;
 import android.widget.AdapterView;
 import android.widget.ListView;
 
 import androidx.annotation.Nullable;
 import androidx.appcompat.app.ActionBarDrawerToggle;
+import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
 import androidx.appcompat.widget.Toolbar;
 import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.myitime.R;
-import com.example.myitime.function.Data;
+import com.example.myitime.model.Data;
 import com.example.myitime.model.Day;
-import com.example.myitime.model.DaysAdapter;
+import com.example.myitime.view.DaysAdapter;
 import com.example.myitime.model.Label;
+import com.example.myitime.view.ColorPickerView;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
@@ -33,9 +41,13 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
     public static final int[] defaultPicturesId=new int[]{R.drawable.default1,R.drawable.default2,R.drawable.default3,R.drawable.default4};
     public static final Drawable[] defaultPictures=new Drawable[defaultPicturesId.length];
 
+    private int themeColor;
     private ArrayList<Day> days=new ArrayList<>();
     private ArrayList<Label> labels=new ArrayList<>();
     private DaysAdapter daysListAdapter;
+
+    private Toolbar toolbar;
+    private FloatingActionButton buttonAdd;
 
     @SuppressLint("HandlerLeak")
     @Override
@@ -43,11 +55,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
         //顶部导航栏
-        Toolbar toolbar = findViewById(R.id.toolbar);
+        toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("My iTime");
         setSupportActionBar(toolbar);
         //下方浮动按钮
-        FloatingActionButton buttonAdd = findViewById(R.id.button_add);
+        buttonAdd = findViewById(R.id.button_add);
         buttonAdd.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -70,6 +82,8 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
             defaultPictures[i]=getResources().getDrawable(defaultPicturesId[i]);
         }
         //数据同步（注意数据同步要放在adapter之前！不然读到了数据也不显示！）
+        themeColor=Data.getThemeColor(MainActivity.this);
+        showColor(themeColor);
         days=Data.getDays(MainActivity.this);
         labels=Data.getLabels(MainActivity.this);
         daysListAdapter = new DaysAdapter(MainActivity.this,R.layout.day_item,days);
@@ -142,13 +156,33 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         int id = item.getItemId();
 
         if (id == R.id.nav_home) {
-            // Handle the camera action
+
         } else if (id == R.id.nav_label) {
 
         } else if (id == R.id.nav_component) {
 
-        } else if (id == R.id.nav_color) {
-
+        } else if (id == R.id.nav_color) {//设置主题色
+            //先保存原来的颜色，以免用户撤销
+            final int oldThemeColor=themeColor;
+            new AlertDialog.Builder(MainActivity.this)
+                    .setTitle("选择颜色")
+                    .setView(getColorPickerView())
+                    .setPositiveButton("确定", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            Data.setThemeColor(MainActivity.this,themeColor);//保存设置的主题颜色
+                            dialog.dismiss();
+                        }
+                    })
+                    .setNegativeButton("取消", new DialogInterface.OnClickListener() {
+                        @Override
+                        public void onClick(DialogInterface dialog, int which) {
+                            dialog.dismiss();
+                            //恢复状态栏、顶部导航栏、浮动按钮颜色
+                            themeColor=oldThemeColor;
+                            showColor(themeColor);
+                        }
+                    }).create().show();
         } else if (id == R.id.nav_advanced) {
 
         } else if (id == R.id.nav_settings) {
@@ -162,6 +196,42 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         DrawerLayout drawer = findViewById(R.id.drawer_layout);
         drawer.closeDrawer(GravityCompat.START);
         return true;
+    }
+
+    private ColorPickerView getColorPickerView() {
+        ColorPickerView picker=new ColorPickerView(MainActivity.this);
+        picker.setOrientation(ColorPickerView.Orientation.HORIZONTAL);//水平条
+        picker.setIndicatorEnable(true);//使用指示点
+        picker.setIndicatorColor(Color.argb(125,0,255,255));//指示点默认半透明，颜色是中间的青色
+        picker.setOnColorPickerChangeListener(new ColorPickerView.OnColorPickerChangeListener() {
+            @Override
+            public void onColorChanged(ColorPickerView picker, int color) {//颜色改变时回调
+                picker.setIndicatorColor(color);//指示点颜色随之改变
+                showColor(color);
+            }
+
+            @Override
+            public void onStartTrackingTouch(ColorPickerView picker) {
+
+            }
+
+            @Override
+            public void onStopTrackingTouch(ColorPickerView picker) {
+
+            }
+        });
+        return picker;
+    }
+
+    private void showColor(int color) {
+        toolbar.setBackgroundColor(color);//顶部导航栏颜色随之改变
+        ColorStateList colorStateList = new ColorStateList(new int[1][1],new int[]{color});
+        buttonAdd.setBackgroundTintMode(PorterDuff.Mode.SRC_ATOP);
+        buttonAdd.setBackgroundTintList(colorStateList);//浮动按钮颜色随之改变
+        Window window = getWindow();
+        window.addFlags(WindowManager.LayoutParams.FLAG_DRAWS_SYSTEM_BAR_BACKGROUNDS);
+        window.setStatusBarColor(color);//状态栏颜色随之改变
+        themeColor=color;//主题颜色随时保存
     }
 
     @Override
@@ -193,5 +263,7 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
         }
     }
+
+
 
 }

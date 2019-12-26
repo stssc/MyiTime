@@ -17,7 +17,6 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.InputType;
 import android.text.TextWatcher;
-import android.util.Log;
 import android.view.ContextMenu;
 import android.view.Gravity;
 import android.view.Menu;
@@ -38,8 +37,8 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.myitime.R;
-import com.example.myitime.function.Data;
 import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.model.Data;
 import com.example.myitime.model.Day;
 import com.example.myitime.model.Label;
 import com.example.myitime.view.WordWrapLayout;
@@ -116,7 +115,8 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
         if (Objects.equals(intent.getStringExtra("from"), "ViewActivity")){//从ViewActivity来的，说明是要改数据，需要加载Day对象（包括里面的dayLabels）
             initDay();
         }
-        else if (Objects.equals(intent.getStringExtra("from"),"MainActivity")){//从MainActivity来的，说明是要加数据，需要加载标签集Data.labels
+        else if (Objects.equals(intent.getStringExtra("from"),"MainActivity")){//从MainActivity来的，说明是要加数据，需要加载标签集Data.labels以及默认背景颜色
+            titleLayout.setBackgroundColor(Data.getThemeColor(AddActivity.this));
             initLabels();
         }
 
@@ -164,10 +164,8 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 periodText.setText(period+"天");
                 break;
         }
-        Log.d("hhh","what are you doing??");
         StringBuilder showLabels=new StringBuilder("已选：");
         for (Label label:labels){
-            Log.d("hhh",label.getName()+dayLabels.get(label.getName())+"");
             if (dayLabels.get(label.getName())){//标签选中
                 showLabels.append(label.getName()).append(",");
             }
@@ -573,13 +571,11 @@ public class AddActivity extends AppCompatActivity implements View.OnClickListen
                 public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                     String content=buttonView.getText().toString();
                     if (isChecked) {
-                        Log.d("hhh",content+isChecked);
                         dayLabels.remove(content);
                         dayLabels.put(content,true);
                     }
                     else{
                         String name=content.substring(1,content.length());//这有个坑：输出日志发现这里的name是开关触发前的name，也就是说，选中变成"√xxx"的时候，获取到的name是xxx，取消变成"xxx"的时候，获取到的name是"√xxx"，我无语了
-                        Log.d("hhh",name+isChecked);
                         dayLabels.remove(content);
                         dayLabels.put(name,false);
                     }
