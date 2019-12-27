@@ -7,6 +7,7 @@ import android.content.res.ColorStateList;
 import android.graphics.Color;
 import android.graphics.PorterDuff;
 import android.graphics.drawable.Drawable;
+import android.os.Build;
 import android.os.Bundle;
 import android.view.Menu;
 import android.view.MenuItem;
@@ -14,9 +15,11 @@ import android.view.View;
 import android.view.Window;
 import android.view.WindowManager;
 import android.widget.AdapterView;
+import android.widget.ImageView;
 import android.widget.ListView;
 
 import androidx.annotation.Nullable;
+import androidx.annotation.RequiresApi;
 import androidx.appcompat.app.ActionBarDrawerToggle;
 import androidx.appcompat.app.AlertDialog;
 import androidx.appcompat.app.AppCompatActivity;
@@ -25,11 +28,13 @@ import androidx.core.view.GravityCompat;
 import androidx.drawerlayout.widget.DrawerLayout;
 
 import com.example.myitime.R;
+import com.example.myitime.controller.ImageTransformation;
 import com.example.myitime.model.Data;
 import com.example.myitime.model.Day;
-import com.example.myitime.view.DaysAdapter;
 import com.example.myitime.model.Label;
 import com.example.myitime.view.ColorPickerView;
+import com.example.myitime.view.DaysAdapter;
+import com.google.android.material.appbar.CollapsingToolbarLayout;
 import com.google.android.material.floatingactionbutton.FloatingActionButton;
 import com.google.android.material.navigation.NavigationView;
 
@@ -48,15 +53,28 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
 
     private Toolbar toolbar;
     private FloatingActionButton buttonAdd;
+    private ImageView headImage;
 
+    @RequiresApi(api = Build.VERSION_CODES.M)
     @SuppressLint("HandlerLeak")
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
+        //顶部折叠布局
+        CollapsingToolbarLayout toolbarLayout=findViewById(R.id.toolbar_layout);
+        toolbarLayout.setContentScrim(null);//设置CollapsingToolbarLayout完全折叠后消失
+        headImage=findViewById(R.id.head_pic);
+        //状态栏透明
+        if (Build.VERSION.SDK_INT >= 21) {
+            View decorView = getWindow().getDecorView();
+            decorView.setSystemUiVisibility(View.SYSTEM_UI_FLAG_LAYOUT_FULLSCREEN | View.SYSTEM_UI_FLAG_LAYOUT_STABLE);
+            getWindow().setStatusBarColor(Color.TRANSPARENT);
+        }
         //顶部导航栏
         toolbar = findViewById(R.id.toolbar);
         toolbar.setTitle("My iTime");
+//        toolbar.setAlpha(0);//透明
         setSupportActionBar(toolbar);
         //下方浮动按钮
         buttonAdd = findViewById(R.id.button_add);
@@ -87,6 +105,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
         showColor(themeColor);
         days=Data.getDays(MainActivity.this);
         labels=Data.getLabels(MainActivity.this);
+        //封面图片
+        if (days.size()!=0)
+            headImage.setImageDrawable(ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(days.get(0).getPicture())));
+        else
+            headImage.setImageDrawable(getResources().getDrawable(R.drawable.nav_bg));
         daysListAdapter = new DaysAdapter(MainActivity.this,R.layout.day_item,days);
         ListView daysListView = findViewById(R.id.day_list);
         daysListView.setAdapter(daysListAdapter);
@@ -244,6 +267,11 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (resultCode==RESULT_OK){
                     assert intent != null;
                     days.add((Day)intent.getSerializableExtra("day"));
+                    //封面图片
+                    if (days.size()!=0)
+                        headImage.setImageDrawable(ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(days.get(0).getPicture())));
+                    else
+                        headImage.setImageDrawable(getResources().getDrawable(R.drawable.nav_bg));
                     daysListAdapter.notifyDataSetChanged();
                     labels=Data.getLabels(MainActivity.this);
                 }
@@ -252,12 +280,21 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 if (resultCode==ViewActivity.RESULT_DELETE){
                     assert intent != null;
                     days.remove(intent.getIntExtra("position",-1));
+                    //封面图片
+                    if (days.size()!=0)
+                        headImage.setImageDrawable(ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(days.get(0).getPicture())));
+                    else
+                        headImage.setImageDrawable(getResources().getDrawable(R.drawable.nav_bg));
                     daysListAdapter.notifyDataSetChanged();
                     labels=Data.getLabels(MainActivity.this);
                 }
                 else if (resultCode==ViewActivity.RESULT_BACK){
                     assert intent != null;
                     days.set(intent.getIntExtra("position",-1),((Day)intent.getSerializableExtra("new_day")));
+                    if (days.size()!=0)
+                        headImage.setImageDrawable(ImageTransformation.bitmapToDrawable(ImageTransformation.byteToBitmap(days.get(0).getPicture())));
+                    else
+                        headImage.setImageDrawable(null);
                     daysListAdapter.notifyDataSetChanged();
                     labels=Data.getLabels(MainActivity.this);
                 }
@@ -265,7 +302,5 @@ public class MainActivity extends AppCompatActivity implements NavigationView.On
                 break;
         }
     }
-
-
 
 }

@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <color name="colorPrimary">#4C00D5</color>
-    <color name="colorPrimaryDark">#6200EE</color>
+    <color name="colorPrimaryDark">#4C00D5</color>
     <color name="colorAccent">#4C00D5</color>
 
     <color name="red_primary">#F44336</color>
@@ -59,8 +59,7 @@
     <color name="accent">@color/primary</color>
 
     <color name="text_color">#FFFFFF</color>
-
     <color name="black_overlay">#66000000</color>
-
     <color name="layout_background">#FAFAFA</color>
+    <color name="transparent_toolbar">#00FFFFFF</color>
 </resources>

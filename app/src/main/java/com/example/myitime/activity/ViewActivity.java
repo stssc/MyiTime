@@ -22,7 +22,7 @@ import androidx.appcompat.app.AppCompatActivity;
 import androidx.constraintlayout.widget.ConstraintLayout;
 
 import com.example.myitime.R;
-import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.controller.ImageTransformation;
 import com.example.myitime.model.Data;
 import com.example.myitime.model.Day;
 

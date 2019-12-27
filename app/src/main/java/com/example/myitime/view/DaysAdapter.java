@@ -15,7 +15,7 @@ import androidx.annotation.LayoutRes;
 import androidx.annotation.NonNull;
 import androidx.annotation.Nullable;
 
-import com.example.myitime.function.ImageTransformation;
+import com.example.myitime.controller.ImageTransformation;
 import com.example.myitime.R;
 import com.example.myitime.model.Day;
 

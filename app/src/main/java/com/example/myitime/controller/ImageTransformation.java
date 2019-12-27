@@ -1,4 +1,4 @@
-package com.example.myitime.function;
+package com.example.myitime.controller;
 
 import android.content.Context;
 import android.graphics.Bitmap;

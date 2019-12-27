@@ -342,7 +342,6 @@ public class ColorPickerView extends View {
                 Color.rgb(0, 255, 255),
                 Color.rgb(0, 0, 255),
                 Color.rgb(255, 0, 255),
-                Color.rgb(255, 0, 0),
                 Color.rgb(128,128,128),
                 Color.rgb(0,0,0)
         };
